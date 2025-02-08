@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Success Page</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <script src="/static/js/timer.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h2>Charging Started for User: {{ user_id }}</h2>
+    <p id="countdown-timer"></p>
+    <button onclick="stopCharging('{{ user_id }}')">Stop Charging</button>
+  </div>
+</body>
+</html>

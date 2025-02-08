@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Status Page</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <div class="container">
+    <h2>NodeMCU Status: {{ status }}</h2>
+    
+    <h3>Charging Logs</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>User ID</th>
+          <th>Start Time</th>
+          <th>Stop Time</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td>{{ log[0] }}</td>
+          <td>{{ log[1] }}</td>
+          <td>{{ log[2] if log[2] else 'Charging' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>
