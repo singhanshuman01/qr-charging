@@ -6,14 +6,16 @@ from datetime import datetime
 app = Flask(__name__)
 
 # Global variable to store NodeMCU IP
-nodeMCU_IP = None
+nodeMCU_IP = "192.168.149.83"
 
 # MySQL Database Connection
 db_config = {
     "host": "localhost",
     "user": "root",
-    "password": "your_password",
-    "database": "charging_system",
+    "password": "anshuMan0098@",
+    "database": "rfid_charging",
+    "use_pure": True,
+    "ssl_disabled": True
 }
 
 # Function to log data into MySQL
