@@ -6,7 +6,7 @@ from datetime import datetime
 app = Flask(__name__)
 
 # Global variable to store NodeMCU IP
-nodeMCU_IP = "192.168.149.83"
+nodeMCU_IP = None
 
 # MySQL Database Connection
 db_config = {
@@ -120,25 +120,48 @@ def status():
         query = "SELECT * FROM charging_logs ORDER BY start_time DESC"
         cursor.execute(query)
         logs = cursor.fetchall()
+        for log in logs:
+            print(log)
 
         cursor.close()
         conn.close()
+        return render_template("status.html", logs=logs, status=charging_status)
     except mysql.connector.Error as err:
         print(f"Error: {err}")
 
-    return render_template("status.html", status=charging_status, logs=logs)
 
+@app.route('/stop_charging/<user_id>')
+def stop_charging(user_id):
+    stop_time = datetime.now()
 
-@app.route("/relay_off", methods=["POST"])
-def stop_charging():
-    if nodeMCU_IP:
-        try:
-            requests.get(f"http://{nodeMCU_IP}/relay_off")
-            return jsonify({"status": "Charging stopped"})
-        except Exception as e:
-            return jsonify({"error": str(e)})
+    conn = mysql.connector.connect(**db_config)
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("UPDATE charging_logs SET stop_time = %s WHERE user_id = %s AND stop_time IS NULL",
+                    (stop_time, user_id))
+    conn.commit()
+    cursor.close()
+    conn.close()
 
-    return jsonify({"error": "NodeMCU IP not registered"})
+    # Send request to NodeMCU to turn off the relay
+    try:
+        requests.get(f"http://{nodeMCU_IP}/relay_off")
+        return redirect(url_for('login'))
+    except requests.exceptions.RequestException as e:
+        print("Error communicating with NodeMCU:", e)
+
+    # flash('Charging Stopped', 'info')
+    return redirect(url_for('login'))
+
+# @app.route("/relay_off", methods=["POST"])
+# def stop_charging():
+#     if nodeMCU_IP:
+#         try:
+#             requests.get(f"http://{nodeMCU_IP}/relay_off")
+#             return jsonify({"status": "Charging stopped"})
+#         except Exception as e:
+#             return jsonify({"error": str(e)})
+
+#     return jsonify({"error": "NodeMCU IP not registered"})
 
 
 if __name__ == "__main__":

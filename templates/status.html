@@ -1,34 +1,63 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Status Page</title>
-  <link rel="stylesheet" href="/static/css/style.css">
+    <title>Charging Status</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        a {
+            text-decoration: none;
+            color: purple;
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h2>NodeMCU Status: {{ status }}</h2>
-    
+    <h1>RFID Charging System - Status Page</h1>
+    <h2>Current Status: {{ status }}</h2>
+
     <h3>Charging Logs</h3>
     <table>
-      <thead>
-        <tr>
-          <th>User ID</th>
-          <th>Start Time</th>
-          <th>Stop Time</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for log in logs %}
-        <tr>
-          <td>{{ log[0] }}</td>
-          <td>{{ log[1] }}</td>
-          <td>{{ log[2] if log[2] else 'Charging' }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
+        <thead>
+            <tr>
+                <th>Log ID</th>
+                <th>User ID</th>
+                <th>Start Time</th>
+                <th>Stop Time</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+          {% for log in logs %}
+          <tr>
+              <td>{{ log.log_id }}</td>
+              <td>{{ log.user_id }}</td>
+              <td>{{ log.start_time }}</td>
+              <td>{{ log.stop_time }}</td>
+              <td>{{ "Charging" if log.stop_time is none else "Stopped" }}</td>
+          </tr>
+          {% endfor %}
+          
+        </tbody>
     </table>
-  </div>
+
+    <br><a href="/login">Go Back to Login Page</a>
 </body>
 </html>

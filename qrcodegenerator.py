@@ -1,7 +1,7 @@
 import qrcode
 
 # URL for the login page (replace with your actual local server address)
-login_url = "http://localhost:5000/login"
+login_url = "http://192.168.149.21:5000/login"
 
 # Generate the QR code
 qr = qrcode.QRCode(

@@ -1,18 +1,20 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
+#include <ESP8266WebServer.h>
 
 const int relayPin = D1;
-const char* ssid = "your_ssid";
-const char* password = "your_password";
-const char* flaskServerURL = "http://your-laptop-ip:5000/register_ip";
+const char* ssid = "realme8i";
+const char* password = "ansh0098";
+const char* flaskServerURL = "http://192.168.149.21:5000/register_ip";
 
 ESP8266WebServer server(80);
 
 void announceIP() {
   if (WiFi.status() == WL_CONNECTED) {
+    WiFiClient client;
     HTTPClient http;
     String nodeMCU_IP = WiFi.localIP().toString();
-    http.begin(flaskServerURL);
+    http.begin(client,flaskServerURL);
     http.addHeader("Content-Type", "application/json");
 
     String requestBody = "{\"ip\": \"" + nodeMCU_IP + "\"}";
