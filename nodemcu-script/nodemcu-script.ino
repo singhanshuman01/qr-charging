@@ -5,100 +5,112 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
-#define SCREEN_WIDTH 128 // OLED display width, in pixels
-#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define OLED_RESET    -1
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
-
-const int relayPin = D3;
+const int relayPin = D4;  // Changed from D1 to D4
 const char* ssid = "realme8i";
 const char* password = "ansh0098";
-const char* flaskServerURL = "http://192.168.150.21:5000/register_ip";
+const char* flaskServerURL = "http://192.168.33.21:5000/register_ip";
 
 ESP8266WebServer server(80);
 
-void printOled(const char* s){
-  Serial.println(s);
-  display.clearDisplay();
+String relayStatus = "Idle";  // Track relay state
 
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setCursor(0, 10);
-  // Display static text
-  display.println(s);
-  display.display(); 
+void updateDisplay() {
+    display.clearDisplay();
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(20, 25);
+    display.println(relayStatus);
+    display.display();
 }
 
 void announceIP() {
-  if (WiFi.status() == WL_CONNECTED) {
-    WiFiClient client;
-    HTTPClient http;
-    String nodeMCU_IP = WiFi.localIP().toString();
-    http.begin(client,flaskServerURL);
-    http.addHeader("Content-Type", "application/json");
+    if (WiFi.status() == WL_CONNECTED) {
+        WiFiClient client;
+        HTTPClient http;
+        String nodeMCU_IP = WiFi.localIP().toString();
+        http.begin(client, flaskServerURL);
+        http.addHeader("Content-Type", "application/json");
 
-    String requestBody = "{\"ip\": \"" + nodeMCU_IP + "\"}";
-    int httpResponseCode = http.POST(requestBody);
+        String requestBody = "{\"ip\": \"" + nodeMCU_IP + "\"}";
+        int httpResponseCode = http.POST(requestBody);
 
-    if (httpResponseCode > 0) {
-      Serial.print("IP announced successfully: ");
-      Serial.println(nodeMCU_IP);
-    } else {
-      Serial.print("Failed to announce IP: ");
-      Serial.println(httpResponseCode);
+        if (httpResponseCode > 0) {
+            Serial.print("IP announced successfully: ");
+            Serial.println(nodeMCU_IP);
+        } else {
+            Serial.print("Failed to announce IP: ");
+            Serial.println(httpResponseCode);
+        }
+        http.end();
     }
-    http.end();
-  }
 }
 
 void setup() {
-  Serial.begin(115200);
-  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3D)) { // Address 0x3D for 128x64
-    Serial.println(F("SSD1306 allocation failed"));
-    for(;;);
-  }
-  delay(2000);
-  printOled("Idle...");
-
-  pinMode(relayPin, OUTPUT);
-  digitalWrite(relayPin, LOW);
-
-  // Connect to Wi-Fi
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("\nConnected to Wi-Fi!");
-  Serial.print("ESP IP Address: ");
-  Serial.println(WiFi.localIP());
-
-  // Announce IP to Flask server
-  announceIP();
-
-  // Define routes
-  server.on("/relay_on", []() {
-    digitalWrite(relayPin, HIGH);
-    printOled("Charging...");
-    server.send(200, "application/json", "{\"status\": \"Charging\"}");
-  });
-
-  server.on("/relay_off", []() {
+    Serial.begin(9600);
+    pinMode(relayPin, OUTPUT);
     digitalWrite(relayPin, LOW);
-    printOled("Idle...");
-    server.send(200, "application/json", "{\"status\": \"Idle\"}");
-  });
 
-  server.on("/status", []() {
-    String status = digitalRead(relayPin) == HIGH ? "Charging" : "Idle";
-    server.send(200, "application/json", "{\"status\": \"" + status + "\"}");
-  });
+    // Initialize OLED display
+    if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+        Serial.println(F("SSD1306 allocation failed"));
+        for (;;);
+    }
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    display.setCursor(0, 0);
+    display.println("Starting...");
+    display.display();
+    delay(1000);
 
-  server.begin();
-  Serial.println("Server started");
+    // Connect to Wi-Fi
+    WiFi.begin(ssid, password);
+    unsigned long startAttemptTime = millis();
+    while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < 20000) {  // 20-second timeout
+        delay(500);
+        Serial.print(".");
+    }
+    if (WiFi.status() == WL_CONNECTED) {
+        Serial.println("\nConnected to Wi-Fi!");
+        Serial.print("ESP IP Address: ");
+        Serial.println(WiFi.localIP());
+        announceIP();
+    } else {
+        Serial.println("\nFailed to connect to Wi-Fi!");
+    }
+
+    // Initial Display Update
+    updateDisplay();
+
+    // Define routes
+    server.on("/relay_on", []() {
+        digitalWrite(relayPin, HIGH);
+        relayStatus = "Charging";
+        updateDisplay();
+        server.send(200, "application/json", "{\"status\": \"Charging\"}");
+    });
+
+    server.on("/relay_off", []() {
+        digitalWrite(relayPin, LOW);
+        relayStatus = "Idle";
+        updateDisplay();
+        server.send(200, "application/json", "{\"status\": \"Idle\"}");
+    });
+
+    server.on("/status", []() {
+        String status = digitalRead(relayPin) == HIGH ? "Charging" : "Idle";
+        server.send(200, "application/json", "{\"status\": \"" + status + "\"}");
+    });
+
+    server.begin();
+    Serial.println("Server started");
 }
 
 void loop() {
-  server.handleClient();
+    server.handleClient();
 }

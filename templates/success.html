@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Success Page</title>
   <link rel="stylesheet" href="/static/css/style.css">
-  <script src="/static/js/timer.js"></script>
+  <!-- <script src="/static/js/timer.js"></script> -->
 </head>
 <body>
   <div class="container">
@@ -13,5 +13,33 @@
     <p id="countdown-timer"></p>
     <button onclick="stopCharging('{{ user_id }}')">Stop Charging</button>
   </div>
+  <script>
+    // Assuming userId is passed like this from backend/template
+    const userId = "{{ user_id }}"; // Replace this with actual dynamic value if templating
+  
+    function stopCharging(userId) {
+      window.location.href = `/stop_charging/${userId}`;
+    }
+  
+    window.onload = function () {
+      const countdownTimer = document.getElementById("countdown-timer");
+      let timeLeft = 3; // 3 minutes in seconds
+  
+      const timer = setInterval(() => {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        countdownTimer.textContent = `Time Remaining: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          alert("Charging stopped automatically.");
+          stopCharging(userId);
+        }
+  
+        timeLeft--;
+      }, 1000);
+    };
+  </script>
+  
 </body>
 </html>
