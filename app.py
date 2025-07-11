@@ -37,7 +37,7 @@ def log_charging(user_id, start_time=None, stop_time=None):
     except mysql.connector.Error as err:
         print(f"Error: {err}")
 
-
+@app.route("/")
 @app.route("/register_ip", methods=["POST"])
 def register_ip():
     global nodeMCU_IP
